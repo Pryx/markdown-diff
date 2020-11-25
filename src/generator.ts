@@ -12,21 +12,65 @@ export class Generator {
     const output: string[] = [];
     const parts = JsDiff.diffWordsWithSpace(oldString, newString);
 
+    let added: string[] = [];
+    let deleted: string[] = [];
+    let canCombine: boolean = false;
+    let lastState:Number = 0;
     for (const part of parts) {
       const value = part.value;
 
+      if ((value == ' ') && canCombine){
+        continue;
+      }
+      lastState = (part.added? 1 :(part.removed? 2 : 0 ));
+
+      canCombine = (part.added || part.removed)? true : false;
       const prefix = part.added ? '<ins>' : part.removed ? '<del>' : '';
       const posfix = part.added ? '</ins>' : part.removed ? '</del>' : '';
 
       if (Helper.isTitle(part)) {
+        output.push(this.combineDeletedAdded(deleted, added));
+        added = []; deleted = [];
+
         output.push(this.titleDiff(value, prefix, posfix));
       } else if (Helper.isTable(part)) {
+        output.push(this.combineDeletedAdded(deleted, added));
+        added = []; deleted = [];
+
         output.push(this.tableDiff(value, prefix, posfix));
+
       } else if (Helper.isList(part)) {
+        output.push(this.combineDeletedAdded(deleted, added));
+        added = []; deleted = [];
+
         output.push(this.listDiff(value, prefix, posfix));
       } else {
-        output.push(`${prefix}${value}${posfix}`);
+        if (part.removed){
+          deleted.push(value);
+        } else if (part.added){
+          added.push(value);
+        } else {
+          output.push(this.combineDeletedAdded(deleted, added));
+          added = []; deleted = [];
+
+          output.push(value);
+        }
       }
+    }
+
+    output.push(this.combineDeletedAdded(deleted, added));
+
+    return output.join('');
+  }
+
+  private combineDeletedAdded(deleted: string[],added: string[]){
+    const output: string[] = [];
+    if (deleted.length){
+       output.push(`<del>${deleted.join(' ')}</del>`);
+    }
+
+    if (added.length){
+       output.push(`<ins>${added.join(' ')}</ins>`);
     }
 
     return output.join('');

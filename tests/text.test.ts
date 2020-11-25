@@ -14,4 +14,11 @@ describe('Text', () => {
     const diff = markdownDiff(oldStr, newStr);
     assert.equal(diff, 'Simple sentence <ins>with insert </ins>and<del> delete</del>');
   });
+
+  it('Single line delete insert smart test', () => {
+    const oldStr = 'This is a test that tests smarter diffing';
+    const newStr = 'This isn\'t not a test that doesn\'t test smarter diffing';
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, 'This <del>is</del><ins>isn\'t not </ins>a test that <del>tests</del><ins>doesn\'t test </ins>smarter diffing');
+  });
 });
