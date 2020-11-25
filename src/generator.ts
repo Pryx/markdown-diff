@@ -10,7 +10,7 @@ export class Generator {
    */
   public exec(oldString: string, newString: string) {
     const output: string[] = [];
-    const parts = JsDiff.diffChars(oldString, newString);
+    const parts = JsDiff.diffWordsWithSpace(oldString, newString);
 
     for (const part of parts) {
       const value = part.value;
