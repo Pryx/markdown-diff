@@ -23,9 +23,9 @@ export class Generator {
         continue;
       }
       lastState = (part.added? 1 :(part.removed? 2 : 0 ));
-
+      
       canCombine = (part.added || part.removed)? true : false;
-      const prefix = part.added ? '<ins>' : part.removed ? '<del>' : '';
+      const prefix = part.added ? '<ins style="color:darkgreen;background:#eaffea;">' : part.removed ? '<del style="color:#a33;background:#ffeaea;text-decoration:line-through;">' : '';
       const posfix = part.added ? '</ins>' : part.removed ? '</del>' : '';
 
       if (Helper.isTitle(part)) {
@@ -66,11 +66,11 @@ export class Generator {
   private combineDeletedAdded(deleted: string[],added: string[]){
     const output: string[] = [];
     if (deleted.length){
-       output.push(`<del>${deleted.join(' ')}</del>`);
+       output.push(`<del style="color:#a33;background:#ffeaea;text-decoration:line-through;">${deleted.join(' ')}</del>`);
     }
 
     if (added.length){
-       output.push(`<ins>${added.join(' ')}</ins>`);
+       output.push(`<ins style="color:darkgreen;background:#eaffea;">${added.join(' ')}</ins>`);
     }
 
     return output.join('');
