@@ -8,53 +8,15 @@ export class Generator {
   private static addColoring = ' style="color:darkgreen;background:#eaffea;"';
   private delStyles = '';
   private addStyles = '';
+
   /**
    * exec
    */
   public exec(oldString: string, newString: string, coloring:boolean = false) {
-    const output: string[] = [];
-    const lines = JsDiff.diffTrimmedLines(oldString, newString);
     this.delStyles = coloring ? Generator.delColoring : '';
     this.addStyles = coloring ? Generator.addColoring : '';
-
-    //TODO: Maybe generalize for ANY html tag. Not sure how useful that would be as in standard markdown there are usualy no html tags present
-    let regexImgFix = /(<img.*\/>)/gm;
-
-    for (let i = 0; i < lines.length; i++) {
-      const element = lines[i];
-      const prefix = element.added ? `<ins${this.addStyles}>` : element.removed ? `<del${this.delStyles}>` : '';
-      const posfix = element.added ? '</ins>' : element.removed ? '</del>' : '';
-      if (lines[i].removed){
-        if (i+1 < lines.length && lines[i+1].added)
-        {
-          const parts = JsDiff.diffWordsWithSpace(lines[i].value, lines[i+1].value);
-          output.push(this.diffParts(parts));
-          i++;
-        }else{
-          output.push(prefix + element.value + posfix)
-        }
-      } else{
-        output.push(prefix + element.value + posfix)
-      }
-    }
-
-    let out = output.join('');
-
-    let found = [...out.matchAll(regexImgFix)];
-    
-    for (const elem of found.map(m => m[1])){
-      let original = elem.replace(/<del.*?>(.*)<\/del><ins.*?\/ins>/, '$1');
-      let modified = elem.replace(/<del.*?\/del><ins>(.*?)<\/ins>/, '$1');
-
-      out = out.replace(elem, `<del${this.delStyles}>${original}</del><ins${this.addStyles}>${modified}</ins>`);
-    }
-
-
-    return out;
-  }
-
-  private diffParts(parts: JsDiff.Change[]):string {
     const output: string[] = [];
+    const parts = JsDiff.diffWordsWithSpace(oldString, newString);
 
     for (let i = 0; i < parts.length; i++) {
       const value = parts[i].value;
@@ -105,10 +67,23 @@ export class Generator {
       }
     }
 
-    return output.join('');
+    let regexImgFix = /(<img.*\/>)/gm;
+
+    let out = output.join('');
+
+    let found = [...out.matchAll(regexImgFix)];
+    
+    for (const elem of found.map(m => m[1])){
+      let original = elem.replace(/<del.*?>(.*)<\/del><ins.*?\/ins>/, '$1');
+      let modified = elem.replace(/<del.*?\/del><ins>(.*?)<\/ins>/, '$1');
+
+      out = out.replace(elem, `<del${this.delStyles}>${original}</del><ins${this.addStyles}>${modified}</ins>`);
+    }
+
+    return out;
   }
 
-
+  
   private titleDiff(value: string, prefix: string, posfix: string) {
     const out = [];
     let match = Generator.titleRegexWithContent.exec(value);
@@ -122,7 +97,11 @@ export class Generator {
       match = Generator.titleRegexWithContent.exec(value);
     }
 
-    return out.join('\n');
+    if(value.endsWith("\n")){
+      return out.join('\n') + '\n';
+    }else{
+      return out.join('\n');
+    }
   }
 
   private listDiff(value: string, prefix: string, posfix: string) {

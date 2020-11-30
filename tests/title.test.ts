@@ -14,4 +14,18 @@ describe('Title', () => {
     const diff = markdownDiff(oldStr, newStr);
     assert.equal(diff, '## ele one\n## ele two\n## <ins>ele three</ins>\n## <ins>ele four</ins>');
   })
+
+  it('Added title', () => {
+    const oldStr = '';
+    const newStr = '#Title';
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, '#<ins>Title</ins>');
+  })
+
+  it('Added title', () => {
+    const oldStr = 'asdf';
+    const newStr = '# Title with newline\nasdf';
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, '# <ins>Title with newline</ins>\nasdf');
+  })
 })
