@@ -4,77 +4,110 @@ import { Helper } from './helper';
 export class Generator {
   private static listRegexWithContent = /^([\r\n\t ]*)(\*|-|\+|\d+\.)([ ]*)(.*)$/gm;
   private static titleRegexWithContent = /^([\r\n\t ]*)(#+)([ ]*)(.*)$/gm;
-
+  private static delColoring = ' style="color:#a33;background:#ffeaea;text-decoration:line-through;"';
+  private static addColoring = ' style="color:darkgreen;background:#eaffea;"';
+  private delStyles = '';
+  private addStyles = '';
   /**
    * exec
    */
-  public exec(oldString: string, newString: string) {
+  public exec(oldString: string, newString: string, coloring:boolean = false) {
     const output: string[] = [];
-    const parts = JsDiff.diffWordsWithSpace(oldString, newString);
+    const lines = JsDiff.diffTrimmedLines(oldString, newString);
+    this.delStyles = coloring ? Generator.delColoring : '';
+    this.addStyles = coloring ? Generator.addColoring : '';
 
-    let added: string[] = [];
-    let deleted: string[] = [];
-    let canCombine: boolean = false;
-    let lastState:Number = 0;
-    for (const part of parts) {
-      const value = part.value;
+    //TODO: Maybe generalize for ANY html tag. Not sure how useful that would be as in standard markdown there are usualy no html tags present
+    let regexImgFix = /(<img.*\/>)/gm;
 
-      if ((value == ' ') && canCombine){
-        continue;
-      }
-      lastState = (part.added? 1 :(part.removed? 2 : 0 ));
-      
-      canCombine = (part.added || part.removed)? true : false;
-      const prefix = part.added ? '<ins style="color:darkgreen;background:#eaffea;">' : part.removed ? '<del style="color:#a33;background:#ffeaea;text-decoration:line-through;">' : '';
-      const posfix = part.added ? '</ins>' : part.removed ? '</del>' : '';
-
-      if (Helper.isTitle(part)) {
-        output.push(this.combineDeletedAdded(deleted, added));
-        added = []; deleted = [];
-
-        output.push(this.titleDiff(value, prefix, posfix));
-      } else if (Helper.isTable(part)) {
-        output.push(this.combineDeletedAdded(deleted, added));
-        added = []; deleted = [];
-
-        output.push(this.tableDiff(value, prefix, posfix));
-
-      } else if (Helper.isList(part)) {
-        output.push(this.combineDeletedAdded(deleted, added));
-        added = []; deleted = [];
-
-        output.push(this.listDiff(value, prefix, posfix));
-      } else {
-        if (part.removed){
-          deleted.push(value);
-        } else if (part.added){
-          added.push(value);
-        } else {
-          output.push(this.combineDeletedAdded(deleted, added));
-          added = []; deleted = [];
-
-          output.push(value);
+    for (let i = 0; i < lines.length; i++) {
+      const element = lines[i];
+      const prefix = element.added ? `<ins${this.addStyles}>` : element.removed ? `<del${this.delStyles}>` : '';
+      const posfix = element.added ? '</ins>' : element.removed ? '</del>' : '';
+      if (lines[i].removed){
+        if (i+1 < lines.length && lines[i+1].added)
+        {
+          const parts = JsDiff.diffWordsWithSpace(lines[i].value, lines[i+1].value);
+          output.push(this.diffParts(parts));
+          i++;
+        }else{
+          output.push(prefix + element.value + posfix)
         }
+      } else{
+        output.push(prefix + element.value + posfix)
       }
     }
 
-    output.push(this.combineDeletedAdded(deleted, added));
+    let out = output.join('');
 
-    return output.join('');
+    let found = [...out.matchAll(regexImgFix)];
+    
+    for (const elem of found.map(m => m[1])){
+      let original = elem.replace(/<del.*?>(.*)<\/del><ins.*?\/ins>/, '$1');
+      let modified = elem.replace(/<del.*?\/del><ins>(.*?)<\/ins>/, '$1');
+
+      out = out.replace(elem, `<del${this.delStyles}>${original}</del><ins${this.addStyles}>${modified}</ins>`);
+    }
+
+
+    return out;
   }
 
-  private combineDeletedAdded(deleted: string[],added: string[]){
+  private diffParts(parts: JsDiff.Change[]):string {
     const output: string[] = [];
-    if (deleted.length){
-       output.push(`<del style="color:#a33;background:#ffeaea;text-decoration:line-through;">${deleted.join(' ')}</del>`);
-    }
 
-    if (added.length){
-       output.push(`<ins style="color:darkgreen;background:#eaffea;">${added.join(' ')}</ins>`);
+    for (let i = 0; i < parts.length; i++) {
+      const value = parts[i].value;
+      
+      const prefix = parts[i].added ? `<ins${this.addStyles}>` : parts[i].removed ? `<del${this.delStyles}>` : '';
+      const posfix = parts[i].added ? '</ins>' : parts[i].removed ? '</del>' : '';
+
+
+      if (Helper.isTitle(parts[i])) {
+        output.push(this.titleDiff(value, prefix, posfix));
+      } else if (Helper.isTable(parts[i])) {
+        output.push(this.tableDiff(value, prefix, posfix));
+      } else if (Helper.isList(parts[i])) {
+        output.push(this.listDiff(value, prefix, posfix));
+      } else if (parts[i].removed || parts[i].added) {
+        let added: string = "";
+        let removed: string = "";
+        for (; i < parts.length; i++){
+          if (Helper.isTitle(parts[i]) ||
+            Helper.isTable(parts[i]) ||
+            Helper.isList(parts[i])){
+            i--;
+            break;
+          }
+
+          if (parts[i].value.trim().length == 0){
+            added += parts[i].value;
+            removed += parts[i].value;
+          } else if (parts[i].added) {
+            added += parts[i].value;
+          } else if (parts[i].removed){
+            removed += parts[i].value;
+          }else{
+            i--;
+            break;
+          }
+        }
+
+        if (removed.length){
+            output.push(`<del${this.delStyles}>${removed}</del>`);
+        }
+    
+        if (added.length){
+            output.push(`<ins${this.addStyles}>${added}</ins>`);
+        }
+      }else{
+        output.push(parts[i].value);
+      }
     }
 
     return output.join('');
   }
+
 
   private titleDiff(value: string, prefix: string, posfix: string) {
     const out = [];

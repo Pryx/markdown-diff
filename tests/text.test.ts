@@ -19,6 +19,14 @@ describe('Text', () => {
     const oldStr = 'This is a test that tests smarter diffing';
     const newStr = 'This isn\'t not a test that doesn\'t test smarter diffing';
     const diff = markdownDiff(oldStr, newStr);
-    assert.equal(diff, 'This <del>is</del><ins>isn\'t not </ins>a test that <del>tests</del><ins>doesn\'t test </ins>smarter diffing');
+    assert.equal(diff, 'This <del>is </del><ins>isn\'t not </ins>a test that <del>tests </del><ins>doesn\'t test </ins>smarter diffing');
+  });
+
+
+  it('If there is an HTML tag, don\'t fck it up with ins and del', () => {
+    const oldStr = 'This is an image <img src="srctest"/>';
+    const newStr = 'This is an image <img src="srctest2"/>';
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, 'This is an image <del><img src="srctest"/></del><ins><img src="srctest2"/></ins>');
   });
 });
