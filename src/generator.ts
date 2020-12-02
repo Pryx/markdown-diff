@@ -74,8 +74,8 @@ export class Generator {
     let found = [...out.matchAll(regexImgFix)];
     
     for (const elem of found.map(m => m[1])){
-      let original = elem.replace(/<del.*?>(.*)<\/del><ins.*?\/ins>/, '$1');
-      let modified = elem.replace(/<del.*?\/del><ins>(.*?)<\/ins>/, '$1');
+      let original = elem.replace(/<del.*?>(.*?)<\/del>/g, '$1').replace(/<ins.*?\/ins>/g, '');
+      let modified = elem.replace(/<ins.*?>(.*?)<\/ins>/g, '$1').replace(/<del.*?\/del>/g, '');
 
       out = out.replace(elem, `<del${this.delStyles}>${original}</del><ins${this.addStyles}>${modified}</ins>`);
     }
