@@ -4,24 +4,18 @@ import { Helper } from './helper';
 export class Generator {
   private static listRegexWithContent = /^([\r\n\t ]*)(\*|-|\+|\d+\.)([ ]*)(.*)$/gm;
   private static titleRegexWithContent = /^([\r\n\t ]*)(#+)([ ]*)(.*)$/gm;
-  private static delColoring = ' style="color:#a33;background:#ffeaea;text-decoration:line-through;"';
-  private static addColoring = ' style="color:darkgreen;background:#eaffea;"';
-  private delStyles = '';
-  private addStyles = '';
 
   /**
    * exec
    */
   public exec(oldString: string, newString: string, coloring:boolean = false) {
-    this.delStyles = coloring ? Generator.delColoring : '';
-    this.addStyles = coloring ? Generator.addColoring : '';
     const output: string[] = [];
     const parts = JsDiff.diffWordsWithSpace(oldString, newString);
 
     for (let i = 0; i < parts.length; i++) {
       const value = parts[i].value;
       
-      const prefix = parts[i].added ? `<ins${this.addStyles}>` : parts[i].removed ? `<del${this.delStyles}>` : '';
+      const prefix = parts[i].added ? `<ins>` : parts[i].removed ? `<del>` : '';
       const posfix = parts[i].added ? '</ins>' : parts[i].removed ? '</del>' : '';
 
 
@@ -56,11 +50,11 @@ export class Generator {
         }
 
         if (removed.length){
-            output.push(`<del${this.delStyles}>${removed}</del>`);
+            output.push(`<del>${removed}</del>`);
         }
     
         if (added.length){
-            output.push(`<ins${this.addStyles}>${added}</ins>`);
+            output.push(`<ins>${added}</ins>`);
         }
       }else{
         output.push(parts[i].value);
@@ -78,7 +72,7 @@ export class Generator {
         let original = elem.replace(/<del.*?>(.*?)<\/del>/g, '$1').replace(/<ins.*?\/ins>/g, '');
         let modified = elem.replace(/<ins.*?>(.*?)<\/ins>/g, '$1').replace(/<del.*?\/del>/g, '');
 
-        out = out.replace(elem, `<del${this.delStyles}>${original}</del><ins${this.addStyles}>${modified}</ins>`);
+        out = out.replace(elem, `<del>${original}</del><ins>${modified}</ins>`);
       }
     }
 
