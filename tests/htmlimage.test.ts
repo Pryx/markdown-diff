@@ -1,5 +1,7 @@
 import { assert } from 'chai';
 import { markdownDiff } from '../src/index';
+import * as JsDiff from 'diff';
+
 
 describe('HTML Image tests', () => {
   it('Image should be wrapped around', () => {
@@ -25,10 +27,10 @@ describe('HTML Image tests', () => {
   })
 
   it('If same, do not duplicate', () => {
-    const oldStr = 'Test <img class="abc" src="test"/>';
-    const newStr = 'Test <img class="abc" src="test"/>';
+    const oldStr = '<img alt="overview_option" src={useBaseUrl(\'xxx\')} />';
+    const newStr = '<img alt="overview_option" src={useBaseUrl(\'xxx\')} />';
     const diff = markdownDiff(oldStr, newStr);
-    assert.equal(diff, 'Test <img class="abc" src="test"/>');
+    assert.equal(diff, '<img alt="overview_option" src={useBaseUrl(\'xxx\')} />');
   })
 
   it('If added, do not duplicate', () => {

@@ -20,15 +20,21 @@ export class Generator {
 
 
       if (Helper.isTitle(parts[i])) {
+        //If title, diff it with titleDiff and push to output
         output.push(this.titleDiff(value, prefix, posfix));
       } else if (Helper.isTable(parts[i])) {
+        //If table, diff it with tableDiff and push to output
         output.push(this.tableDiff(value, prefix, posfix));
       } else if (Helper.isList(parts[i])) {
+        //If list, diff it with listDiff and push to output
         output.push(this.listDiff(value, prefix, posfix));
       } else if (parts[i].removed || parts[i].added) {
+        //If normal text, check if we can combine it
         let added: string = "";
         let removed: string = "";
+        //Iterate over parts
         for (; i < parts.length; i++){
+          //We found special item! Backtrack and break the cycle
           if (Helper.isTitle(parts[i]) ||
             Helper.isTable(parts[i]) ||
             Helper.isList(parts[i])){
@@ -37,13 +43,17 @@ export class Generator {
           }
 
           if (parts[i].value.trim().length == 0){
+            //If whitespace, just add it to both, we don't care. Works well enough
             added += parts[i].value;
             removed += parts[i].value;
           } else if (parts[i].added) {
+            //If added, just add it to added
             added += parts[i].value;
           } else if (parts[i].removed){
+            //Ditto but for removed :)
             removed += parts[i].value;
           }else{
+            // We found something that is not added, removed or whitespace. Let's break this cycle
             i--;
             break;
           }
@@ -63,12 +73,16 @@ export class Generator {
 
     let regexImgFix = /(<(img|br).*\/>)/gm;
 
+    let linksFix = /(\[.*?\]\(.*?\))/gm;
+
     let out = output.join('');
 
-    let found = [...out.matchAll(regexImgFix)];
+    let links = [...out.matchAll(linksFix)];
+    let imgbr = [...out.matchAll(regexImgFix)];
+    let found = imgbr.concat(links);
     
     for (const elem of found.map(m => m[1])){
-      if (elem.includes('del') || elem.includes('ins')){
+      if (elem.includes('<del') || elem.includes('<ins')){
         let original = elem.replace(/<del.*?>(.*?)<\/del>/g, '$1').replace(/<ins.*?\/ins>/g, '');
         let modified = elem.replace(/<ins.*?>(.*?)<\/ins>/g, '$1').replace(/<del.*?\/del>/g, '');
 

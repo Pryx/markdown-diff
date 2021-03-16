@@ -13,6 +13,6 @@ describe('Link', () => {
     const oldStr = "[I'm an inline-style link](https://www.google.com)";
     const newStr = "[I'm an inline-style link](https://www.xxxx.com)";
     const diff = markdownDiff(oldStr, newStr);
-    assert.equal(diff, '<del>[I\'m an inline-style link](https://www.google.com)</del><ins>[Test](https://www.xxxx.com)</ins>');
+    assert.equal(diff, '<del>[I\'m an inline-style link](https://www.google.com)</del><ins>[I\'m an inline-style link](https://www.xxxx.com)</ins>');
   })
 })
