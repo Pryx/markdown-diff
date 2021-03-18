@@ -3,7 +3,7 @@ import { markdownDiff } from '../src/index';
 import * as JsDiff from 'diff';
 
 
-describe('HTML Image tests', () => {
+describe('HTML tests', () => {
   it('Image should be wrapped around', () => {
     const oldStr = '<img src="test"/>';
     const newStr = '<img src="test2"/>';
@@ -45,6 +45,13 @@ describe('HTML Image tests', () => {
     const newStr = '';
     const diff = markdownDiff(oldStr, newStr);
     assert.equal(diff, '<del><img class="abc" src="test"/></del>');
+  })
+
+  it('Newlines', () => {
+    const oldStr = "Added stuff...\n";
+    const newStr = "Added stuff. Test\nasdasd\ntest\n";
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, "Added stuff<del>...</del><ins>. Test</ins>\n<ins>asdasd</ins>\n<ins>test</ins>\n");
   })
 
   it('If removed, do not duplicate', () => {

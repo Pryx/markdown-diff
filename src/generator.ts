@@ -8,13 +8,13 @@ export class Generator {
   /**
    * exec
    */
-  public exec(oldString: string, newString: string, coloring:boolean = false) {
+  public exec(oldString: string, newString: string, coloring: boolean = false) {
     const output: string[] = [];
     const parts = JsDiff.diffWordsWithSpace(oldString, newString);
 
     for (let i = 0; i < parts.length; i++) {
       const value = parts[i].value;
-      
+
       const prefix = parts[i].added ? `<ins>` : parts[i].removed ? `<del>` : '';
       const posfix = parts[i].added ? '</ins>' : parts[i].removed ? '</del>' : '';
 
@@ -33,40 +33,70 @@ export class Generator {
         let added: string = "";
         let removed: string = "";
         //Iterate over parts
-        for (; i < parts.length; i++){
+        for (; i < parts.length; i++) {
           //We found special item! Backtrack and break the cycle
           if (Helper.isTitle(parts[i]) ||
             Helper.isTable(parts[i]) ||
-            Helper.isList(parts[i])){
+            Helper.isList(parts[i])) {
             i--;
             break;
           }
 
-          if (parts[i].value.trim().length == 0){
+          if (parts[i].value.indexOf("\n") !== -1) {
+            let split = parts[i].value.split("\n");
+
+            if (!parts[i].removed && !parts[i].added){
+              i--;
+              break;
+            }
+
+            for (let j = 0; j < split.length-1; j++) {
+              if (parts[i].removed) {
+                removed += split[j] + "</del>\n<del>"
+              } else if (parts[i].added) {
+                added += split[j] + "</ins>\n<ins>"
+              }
+            }
+            
+            if (split.length>1){
+              if (parts[i].removed) {
+                removed += split[split.length-1]
+              } else if (parts[i].added) {
+                added += split[split.length-1]
+              }
+            }
+            continue;
+          }
+
+          if (parts[i].value.trim().length == 0) {
             //If whitespace, just add it to both, we don't care. Works well enough
             added += parts[i].value;
             removed += parts[i].value;
           } else if (parts[i].added) {
             //If added, just add it to added
             added += parts[i].value;
-          } else if (parts[i].removed){
+          } else if (parts[i].removed) {
             //Ditto but for removed :)
             removed += parts[i].value;
-          }else{
+          } else {
             // We found something that is not added, removed or whitespace. Let's break this cycle
             i--;
             break;
           }
         }
 
-        if (removed.length){
-            output.push(`<del>${removed}</del>`);
+        if (removed.length) {
+          removed = `<del>${removed}</del>`
+          removed = removed.replace('<del></del>', '')
+          output.push(removed);
         }
-    
-        if (added.length){
-            output.push(`<ins>${added}</ins>`);
+
+        if (added.length) {
+          added = `<ins>${added}</ins>`;
+          added = added.replace('<ins></ins>', '')
+          output.push(added);
         }
-      }else{
+      } else {
         output.push(parts[i].value);
       }
     }
@@ -80,9 +110,9 @@ export class Generator {
     let links = [...out.matchAll(linksFix)];
     let imgbr = [...out.matchAll(regexImgFix)];
     let found = imgbr.concat(links);
-    
-    for (const elem of found.map(m => m[1])){
-      if (elem.includes('<del') || elem.includes('<ins')){
+
+    for (const elem of found.map(m => m[1])) {
+      if (elem.includes('<del') || elem.includes('<ins')) {
         let original = elem.replace(/<del.*?>(.*?)<\/del>/g, '$1').replace(/<ins.*?\/ins>/g, '');
         let modified = elem.replace(/<ins.*?>(.*?)<\/ins>/g, '$1').replace(/<del.*?\/del>/g, '');
 
@@ -93,7 +123,7 @@ export class Generator {
     return out;
   }
 
-  
+
   private titleDiff(value: string, prefix: string, posfix: string) {
     const out = [];
     let match = Generator.titleRegexWithContent.exec(value);
@@ -107,9 +137,9 @@ export class Generator {
       match = Generator.titleRegexWithContent.exec(value);
     }
 
-    if(value.endsWith("\n")){
+    if (value.endsWith("\n")) {
       return out.join('\n') + '\n';
-    }else{
+    } else {
       return out.join('\n');
     }
   }
