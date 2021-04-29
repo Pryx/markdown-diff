@@ -18,7 +18,6 @@ export class Generator {
       const prefix = parts[i].added ? `<ins>` : parts[i].removed ? `<del>` : '';
       const posfix = parts[i].added ? '</ins>' : parts[i].removed ? '</del>' : '';
 
-
       if (Helper.isTitle(parts[i])) {
         //If title, diff it with titleDiff and push to output
         output.push(this.titleDiff(value, prefix, posfix));
@@ -138,7 +137,7 @@ export class Generator {
     }
 
     if (value.endsWith("\n")) {
-      return out.join('\n') + '\n';
+      return out.join('\n') + '\n'; // preserve ending newline
     } else {
       return out.join('\n');
     }

@@ -23,9 +23,23 @@ describe('Title', () => {
   })
 
   it('Added title', () => {
-    const oldStr = 'asdf';
-    const newStr = '# Title with newline\nasdf';
+    const oldStr = 'test';
+    const newStr = '# Title with newline\ntest';
     const diff = markdownDiff(oldStr, newStr);
-    assert.equal(diff, '# <ins>Title with newline</ins>\nasdf');
+    assert.equal(diff, '# <ins>Title with newline</ins>\ntest');
   })
+
+  it('Changed title', () => {
+    const oldStr = '# test\ntest';
+    const newStr = '# test2\ntest';
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, '# <del>test</del>\n# <ins>test2</ins>\ntest');
+  })  
+  
+  it('Changed title to text', () => {
+    const oldStr = '# test';
+    const newStr = 'test2';
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, '# <del>test</del>\n<ins>test2</ins>');
+  })  
 })
