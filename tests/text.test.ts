@@ -29,4 +29,30 @@ describe('Text', () => {
     const diff = markdownDiff(oldStr, newStr);
     assert.equal(diff, 'This is an image <del><img src="srctest"/></del><ins><img src="srctest2"/></ins>');
   });
+
+  it('If there is an HTML tag, don\'t fck it up with ins and del', () => {
+    const oldStr = `# Title
+
+some content`;
+
+    const newStr = `# Title
+
+some changed cotnent...
+
+
+asdasdasd
+
+Commit test`;
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, `# Title
+
+some <del>content</del><ins>changed cotnent...</ins>
+
+
+<ins>asdasdasd</ins>
+
+<ins>Commit test</ins>`);
+  });
+
+
 });

@@ -87,13 +87,13 @@ export class Generator {
 
         if (removed.length) {
           removed = `<del>${removed}</del>`
-          removed = removed.replace('<del></del>', '')
+          removed = removed.replace(/<del><\/del>/g, '')
           output.push(removed);
         }
 
         if (added.length) {
           added = `<ins>${added}</ins>`;
-          added = added.replace('<ins></ins>', '')
+          added = added.replace(/<ins><\/ins>/g, '')
           output.push(added);
         }
       } else {
