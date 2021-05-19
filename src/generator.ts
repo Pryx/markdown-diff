@@ -114,7 +114,8 @@ export class Generator {
       if (elem.includes('<del') || elem.includes('<ins')) {
         let original = elem.replace(/<del.*?>(.*?)<\/del>/g, '$1').replace(/<ins.*?\/ins>/g, '');
         let modified = elem.replace(/<ins.*?>(.*?)<\/ins>/g, '$1').replace(/<del.*?\/del>/g, '');
-
+        original = original.replace(/<[\/]?del.*?>/g, '').replace(/<[\/]?ins.*?>/g, '');
+        modified = modified.replace(/<[\/]?ins.*?>/g, '').replace(/<[\/]?del.*?>/g, '');
         out = out.replace(elem, `<del>${original}</del><ins>${modified}</ins>`);
       }
     }
