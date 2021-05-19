@@ -1,8 +1,8 @@
 import { Change } from 'diff';
 
 export class Helper {
-  private static titleRegex = /([\r\n\t ]*)(#+)/;
-  private static listRegex = /^([\r\n\t ]*)(\*|-|\+|\d+\.)/;
+  public static titleRegex = /([\r\n\t ]*)(#+)/;
+  public static listRegex = /^([\r\n\t ]*)(\*|-|\+|\d+\.)/;
 
   static isTitle(part: Change): boolean {
     return !!(part.added || part.removed) && Helper.titleRegex.test(part.value);

@@ -17,86 +17,98 @@ export class Generator {
 
       const prefix = parts[i].added ? `<ins>` : parts[i].removed ? `<del>` : '';
       const posfix = parts[i].added ? '</ins>' : parts[i].removed ? '</del>' : '';
-
-      if (Helper.isTitle(parts[i])) {
-        //If title, diff it with titleDiff and push to output
-        output.push(this.titleDiff(value, prefix, posfix));
-      } else if (Helper.isTable(parts[i])) {
-        //If table, diff it with tableDiff and push to output
-        output.push(this.tableDiff(value, prefix, posfix));
-      } else if (Helper.isList(parts[i])) {
-        //If list, diff it with listDiff and push to output
-        output.push(this.listDiff(value, prefix, posfix));
-      } else if (parts[i].removed || parts[i].added) {
-        //If normal text, check if we can combine it
-        let added: string = "";
-        let removed: string = "";
-        //Iterate over parts
-        for (; i < parts.length; i++) {
-          //We found special item! Backtrack and break the cycle
-          if (Helper.isTitle(parts[i]) ||
-            Helper.isTable(parts[i]) ||
-            Helper.isList(parts[i])) {
-            i--;
-            break;
+      //If normal text, check if we can combine it
+      let added: string = "";
+      let removed: string = "";
+      const testsplit = value.split("\n");
+      if (testsplit.length > 1) {
+        for (let j = 0; j < testsplit.length; j++) {
+          let line = testsplit[j];
+          if (Helper.titleRegex.test(line)) {
+            //If title, diff it with titleDiff and push to output
+            line = this.titleDiff(line, prefix, posfix);
+          } else if (line.indexOf('|') !== -1) {
+            //If table, diff it with tableDiff and push to output
+            line = this.tableDiff(line, prefix, posfix);
+          } else if (Helper.listRegex.test(line)) {
+            line = this.listDiff(line, prefix, posfix);
           }
+          
+          let last = j == testsplit.length-1;
 
-          if (parts[i].value.indexOf("\n") !== -1) {
-            let split = parts[i].value.split("\n");
-
-            if (!parts[i].removed && !parts[i].added){
+          if (line == testsplit[j] && line.length){
+            if (parts[i].removed) {
+              output.push("<del>" + line + "</del>"+(!last?"\n":''));
+            } else if (parts[i].added) {
+              output.push("<ins>" + line + "</ins>"+(!last?"\n":''));
+            } else {
+              output.push(line + (!last?"\n":''));
+            }
+          } else {
+            output.push(line + (!last?"\n":''));
+          }
+        }
+      } else {
+        if (Helper.isTitle(parts[i])) {
+          //If title, diff it with titleDiff and push to output
+          output.push(this.titleDiff(value, prefix, posfix));
+        } else if (Helper.isTable(parts[i])) {
+          //If table, diff it with tableDiff and push to output
+          output.push(this.tableDiff(value, prefix, posfix));
+        } else if (Helper.isList(parts[i])) {
+          //If list, diff it with listDiff and push to output
+          output.push(this.listDiff(value, prefix, posfix));
+        } else if (parts[i].removed || parts[i].added) {
+          //Iterate over parts
+          for (; i < parts.length; i++) {
+            //We found special item! Backtrack and break the cycle
+            if (Helper.isTitle(parts[i]) ||
+              Helper.isTable(parts[i]) ||
+              Helper.isList(parts[i])) {
               i--;
               break;
             }
-
-            for (let j = 0; j < split.length-1; j++) {
-              if (parts[i].removed) {
-                removed += split[j] + "</del>\n<del>"
-              } else if (parts[i].added) {
-                added += split[j] + "</ins>\n<ins>"
-              }
-            }
             
-            if (split.length>1){
-              if (parts[i].removed) {
-                removed += split[split.length-1]
-              } else if (parts[i].added) {
-                added += split[split.length-1]
+            
+            if (parts[i].value.indexOf("\n") !== -1) {
+              const tmpsplit = parts[i].value.split("\n");
+              if (tmpsplit.length>1){
+                i--;
+                break;
               }
             }
-            continue;
+
+            if (parts[i].value.trim().length == 0) {
+              //If whitespace, just add it to both, we don't care. Works well enough
+              added += parts[i].value;
+              removed += parts[i].value;
+            } else if (parts[i].added) {
+              //If added, just add it to added
+              added += parts[i].value;
+            } else if (parts[i].removed) {
+              //Ditto but for removed :)
+              removed += parts[i].value;
+            } else {
+              // We found something that is not added, removed or whitespace. Let's break this cycle
+              i--;
+              break;
+            }
           }
 
-          if (parts[i].value.trim().length == 0) {
-            //If whitespace, just add it to both, we don't care. Works well enough
-            added += parts[i].value;
-            removed += parts[i].value;
-          } else if (parts[i].added) {
-            //If added, just add it to added
-            added += parts[i].value;
-          } else if (parts[i].removed) {
-            //Ditto but for removed :)
-            removed += parts[i].value;
-          } else {
-            // We found something that is not added, removed or whitespace. Let's break this cycle
-            i--;
-            break;
+          if (removed.length) {
+            removed = `<del>${removed}</del>`
+            removed = removed.replace(/<del><\/del>/g, '')
+            output.push(removed);
           }
-        }
 
-        if (removed.length) {
-          removed = `<del>${removed}</del>`
-          removed = removed.replace(/<del><\/del>/g, '')
-          output.push(removed);
+          if (added.length) {
+            added = `<ins>${added}</ins>`;
+            added = added.replace(/<ins><\/ins>/g, '')
+            output.push(added);
+          }
+        } else {
+          output.push(parts[i].value);
         }
-
-        if (added.length) {
-          added = `<ins>${added}</ins>`;
-          added = added.replace(/<ins><\/ins>/g, '')
-          output.push(added);
-        }
-      } else {
-        output.push(parts[i].value);
       }
     }
 
@@ -164,15 +176,19 @@ export class Generator {
     const out: string[] = [];
 
     const split = value.split('|');
-
     const startWithPipe = split[0].length === 0 ? '|' : '';
     const endsWithPipe = split[split.length - 1].length === 0 ? '|' : '';
 
     const filtered = split.filter(el => el.length !== 0);
-    for (const val of filtered) {
-      out.push(`${prefix}${val}${posfix}`);
+
+    if (filtered.length){
+      for (const val of filtered) {
+        out.push(`${prefix}${val}${posfix}`);
+      }
+
+      return startWithPipe + out.join('|') + endsWithPipe;
     }
 
-    return startWithPipe + out.join('|') + endsWithPipe;
+    return value;
   }
 }

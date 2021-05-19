@@ -1,7 +1,7 @@
 import { assert } from 'chai';
 import { markdownDiff } from '../src/index';
 
-describe('List', () => {
+describe('Tables', () => {
   it('Should work for table',()=>{
     const oldStr = '|a|b|\n|c|d|';
     const newStr = '|1|b|\n|c|d|';
