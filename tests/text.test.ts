@@ -23,14 +23,41 @@ describe('Text', () => {
   });
 
 
-  it('If there is an HTML tag, don\'t fck it up with ins and del', () => {
+  it('If there is an HTML tag, don\'t mess it up with ins and del', () => {
     const oldStr = 'This is an image <img src="srctest"/>';
     const newStr = 'This is an image <img src="srctest2"/>';
     const diff = markdownDiff(oldStr, newStr);
     assert.equal(diff, 'This is an image <del><img src="srctest"/></del><ins><img src="srctest2"/></ins>');
   });
 
-  it('If there is an HTML tag, don\'t fck it up with ins and del', () => {
+
+  it('Multiline diff should work correctly', () => {
+    const oldStr = `
+# Title
+
+some changed cotnent...`;
+    const newStr = `
+# Title
+
+some changed content...
+
+
+asdasdasd
+
+Commit test`;
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, `
+# Title
+
+some changed <del>cotnent</del><ins>content</ins>...
+
+
+<ins>asdasdasd</ins>
+
+<ins>Commit test</ins>`);
+  });
+
+  it('Do not put empty ins and del if newlines added', () => {
     const oldStr = `# Title
 
 some content`;

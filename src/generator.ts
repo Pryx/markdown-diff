@@ -100,7 +100,7 @@ export class Generator {
       }
     }
 
-    let regexImgFix = /(<(img|br).*\/>)/gm;
+    let regexImgFix = /(<(img|br).*[\/]?>)/gm;
 
     let linksFix = /(!?\[.*?\]\(.*?\))/gm;
 

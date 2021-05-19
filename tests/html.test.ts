@@ -58,6 +58,14 @@ describe('HTML tests', () => {
     const oldStr = '<br> <br> <br>';
     const newStr = '<br>';
     const diff = markdownDiff(oldStr, newStr);
-    assert.equal(diff, '<br><del> <br> <br></del>');
+    assert.equal(diff, '<del><br> <br> <br></del><ins><br></ins>');
+  })
+
+  it('Image alt problem', () => {
+    const oldStr = `<img alt="step2.2" src="test">`;
+    const newStr = `<img alt="component_details" src="test">`;
+    const diff = markdownDiff(oldStr, newStr);
+    assert.equal(diff, `<del><img alt="step2.2" src="test"></del><ins><img alt="component_details" src="test"></ins>`);
   })
 })
+
